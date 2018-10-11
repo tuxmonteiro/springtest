@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.PostConstruct;
@@ -58,14 +60,32 @@ public class RootController {
     HikariDataSource dataSource;
 
     Connection connection = null;
+    Queue<Statement> statements = new ConcurrentLinkedQueue<>();
 
     @PostConstruct
     public void init() {
         try {
             connection = dataSource.getConnection();
+            IntStream.rangeClosed(1, 10000).forEach(i -> {
+                try {
+                    statements.add(connection.createStatement());
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private Statement getStatement() {
+        try {
+            statements.add(connection.createStatement());
+            return statements.remove();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        throw new RuntimeException("queue statements failed");
     }
 
 
@@ -98,6 +118,11 @@ public class RootController {
         }
     }
 
+    @GetMapping("/onlyh")
+    public void onlyHibernate() {
+        targetRepository.findAll(new PageRequest(0, 9999));
+    }
+
     @Async
     @GetMapping("/one")
     public void one() {
@@ -110,9 +135,7 @@ public class RootController {
     @GetMapping("/direct")
     public void simple() {
         try {
-            Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(SQL);
-
             while (true) {
                 try {
                     statement.executeQuery();
@@ -124,6 +147,38 @@ public class RootController {
             e.printStackTrace();
         }
 
+    }
+
+    @GetMapping("/onlydb")
+    public ResponseEntity<Void> onlydb() {
+        if (connection == null) {
+            System.err.println("connection is null");
+            return ResponseEntity.status(500).build();
+        }
+        try {
+            Statement statement = connection.createStatement();
+            try (ResultSet resultSet = statement.executeQuery(SQL)) {
+                while (resultSet.next()) { }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/onlydb2")
+    public ResponseEntity<Void> onlydb2() {
+        try {
+            try (ResultSet resultSet = getStatement().executeQuery(SQL)) {
+                while (resultSet.next()) { }
+                resultSet.first();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/targets")
@@ -165,5 +220,17 @@ public class RootController {
                     target.setCreatedBy("t_created_by_" + i);
                     return target;
             }).collect(Collectors.toList());
+    }
+
+    @GetMapping("/targets3")
+    public List<Target> targets3() {
+        return targetRepository.findAll(new PageRequest(0, 12)).getContent().stream().map(t -> {
+                    Target target = new Target();
+                    target.setName(t.getName());
+                    target.setId(t.getId());
+                    target.setCreatedAt(t.getCreatedAt());
+                    target.setCreatedBy(t.getCreatedBy());
+                    return target;
+                }).collect(Collectors.toList());
     }
 }
