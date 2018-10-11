@@ -17,6 +17,8 @@
 package tuxmonteiro.validation.springtest.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
 import org.springframework.util.Assert;
 
 import javax.persistence.CascadeType;
@@ -50,15 +52,25 @@ import java.util.Set;
                 "OR entity.id IN " +
                     "(SELECT entity.id FROM Target entity INNER JOIN entity.pool pool INNER JOIN pool.rules r WHERE r.global = true)")
 })
+@NamedNativeQueries({
+    @NamedNativeQuery(
+        name = "one",
+        query = "SELECT 1"
+    ),
+    @NamedNativeQuery(
+        name = "targets",
+        query = "SELECT * FROM target"
+    )
+})
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(name = "UK_target_name_pool_id", columnNames = { "name", "pool_id" }) })
 public class Target extends AbstractEntity implements WithStatus {
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @JoinColumn(name = "pool_id", nullable = false, foreignKey = @ForeignKey(name="FK_target_pool"))
     private Pool pool;
 
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "target", cascade = CascadeType.REMOVE)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "target", cascade = CascadeType.REMOVE)
     private Set<HealthStatus> healthStatus = new HashSet<>();
 
     @Column(nullable = false)

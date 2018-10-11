@@ -37,7 +37,7 @@ public class DatabaseConfiguration {
     public HikariDataSource dataSource(DataSourceProperties properties) {
         HikariDataSource hikariDataSource = (HikariDataSource) properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
         hikariDataSource.setConnectionTimeout(0);
-        hikariDataSource.setMaximumPoolSize(5);
+        hikariDataSource.setMaximumPoolSize(512);
         hikariDataSource.setAutoCommit(false);
         hikariDataSource.setConnectionTestQuery("SELECT 1");
         hikariDataSource.addDataSourceProperty("cachePrepStmts", Boolean.TRUE);
