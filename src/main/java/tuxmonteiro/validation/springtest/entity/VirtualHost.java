@@ -16,6 +16,7 @@
 
 package tuxmonteiro.validation.springtest.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import org.springframework.util.Assert;
 import tuxmonteiro.validation.springtest.exceptions.BadRequestException;
 
@@ -48,14 +49,17 @@ import java.util.Set;
 @Table(name = "virtualhost", uniqueConstraints = { @UniqueConstraint(name = "UK_virtualhost_name", columnNames = { "name" }) })
 public class VirtualHost extends AbstractEntity implements WithStatus {
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false, foreignKey = @ForeignKey(name="FK_virtualhost_project"))
     private Project project;
 
+    @JsonBackReference
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "virtualhostgroup_id", nullable = false, foreignKey = @ForeignKey(name="FK_virtualhost_virtualhostgroup"))
     private VirtualhostGroup virtualhostgroup;
 
+    @JsonBackReference
     @ManyToMany
     @JoinTable(joinColumns = @JoinColumn(name = "virtualhost_id", nullable = false, foreignKey = @ForeignKey(name = "FK_environment_virtualhost_id")),
                inverseJoinColumns = @JoinColumn(name = "environment_id", foreignKey = @ForeignKey(name = "FK_virtualhost_environment_id")))

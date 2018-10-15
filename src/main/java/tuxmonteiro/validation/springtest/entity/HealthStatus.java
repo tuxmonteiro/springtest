@@ -16,6 +16,9 @@
 
 package tuxmonteiro.validation.springtest.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -47,6 +50,7 @@ public class HealthStatus extends AbstractEntity {
         UNKNOWN
     }
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "target_id", nullable = false, foreignKey = @ForeignKey(name="FK_healthstatus_target"))
     private Target target;

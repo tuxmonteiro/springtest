@@ -16,6 +16,7 @@
 
 package tuxmonteiro.validation.springtest.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.Column;
@@ -45,6 +46,7 @@ public class RuleOrdered extends AbstractEntity implements WithStatus, Comparabl
 
     private static final long serialVersionUID = 1L;
 
+    @JsonBackReference
     @ManyToOne
     @JsonProperty("virtualhostgroup")
     @JoinColumn(name = "virtualhostgroup_ruleordered_id", nullable = false, foreignKey = @ForeignKey(name="FK_virtualhostgroup_ruleordered"))
@@ -54,10 +56,12 @@ public class RuleOrdered extends AbstractEntity implements WithStatus, Comparabl
     @Column(name = "rule_order", nullable = false)
     private Integer order = Integer.MAX_VALUE;
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "rule_ruleordered_id", nullable = false, foreignKey = @ForeignKey(name="FK_rule_ruleordered"))
     private Rule rule;
 
+    @JsonBackReference
     @ManyToOne(optional = false)
     @JoinColumn(name = "environment_id", nullable = false, foreignKey = @ForeignKey(name="FK_ruleordered_environment"))
     private Environment environment;
