@@ -18,10 +18,11 @@ package tuxmonteiro.validation.springtest.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import javax.persistence.NamedNativeQueries;
-import javax.persistence.NamedNativeQuery;
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.core.EmbeddedWrapper;
+import org.springframework.hateoas.core.EmbeddedWrappers;
 import org.springframework.util.Assert;
 
 import javax.persistence.CascadeType;
@@ -31,17 +32,21 @@ import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("JpaQlInspection")
 @NamedQueries({
@@ -75,7 +80,7 @@ public class Target extends AbstractEntity implements WithStatus {
     private Pool pool;
 
     @JsonManagedReference
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "target", cascade = CascadeType.REMOVE)
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "target", cascade = CascadeType.REMOVE)
     private Set<HealthStatus> healthStatus = new HashSet<>();
 
     @Column(nullable = false)
@@ -83,6 +88,16 @@ public class Target extends AbstractEntity implements WithStatus {
 
     @Transient
     private Map<Long, Status> status = new HashMap<>();
+
+    @JsonUnwrapped
+    public Resources simpleHealthStatusEmbedded() {
+        Set<EmbeddedWrapper> embeddeds = new HashSet<>();
+        final Map<String, HealthStatus.Status> healthStatusSimple = healthStatus.stream()
+                .map(h -> new AbstractMap.SimpleEntry<>(h.getSource(), h.getStatus()))
+                .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
+        embeddeds.add(new EmbeddedWrappers(false).wrap(healthStatusSimple, "health"));
+        return new Resources<>(embeddeds);
+    }
 
     public Pool getPool() {
         return pool;
